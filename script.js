@@ -37,6 +37,7 @@
   auth.onAuthStateChanged(user => {
       if (user) {
           // User is logged in
+          console.log(`User Logged In! Name: ${user.displayName}, UID: ${user.uid}`);
           body.classList.add('logged-in');
           userNameSpan.textContent = user.displayName;
   
