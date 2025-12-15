@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Λίστα για Ψώνια</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="login-section">
+        <h1>Λίστα για Ψώνια</h1>
+        <p>Παρακαλώ συνδεθείτε για να συνεχίσετε.</p>
+        <button id="login-button">Σύνδεση με Google</button>
+    </div>
+
+    <div id="app-content">
+        <header>
+            <h1>Η Λίστα μας</h1>
+            <div id="user-info">
+                <span id="user-name"></span>
+                <button id="logout-button">Αποσύνδεση</button>
+            </div>
+        </header>
+        
+        <div class="add-item-container">
+            <input type="text" id="item-input" placeholder="Προσθήκη αντικειμένου...">
+            <button id="add-button">+</button>
+        </div>
+    
+        <h2>Προς Αγορά</h2>
+        <ul id="shopping-list-ul"></ul>
+    
+        <h2>Αγορασμένα</h2>
+        <ul id="completed-list-ul"></ul>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    
+    <!-- Your Script -->
+    <script src="script.js"></script>
+
+</body>
+</html>
