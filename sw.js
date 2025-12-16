@@ -3,12 +3,12 @@ const CACHE_NAME = 'grocery-list-cache-v2';
 
 // The list of files that make up the "app shell" - everything needed to run offline.
 const urlsToCache = [
-    '/',
-    'index.html',
-    'style.css',
-    'script.js',
-    'icons/icon-192x192.png',
-    'icons/icon-512x512.png'
+    './',
+    './index.html',
+    './style.css',
+    './script.js',
+    './icons/icon-192x192.png',
+    './icons/icon-512x512.png'
 ];
 
 // --- INSTALLATION EVENT ---
