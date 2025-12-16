@@ -33,9 +33,14 @@
             <button id="complete-list-button">Ολοκλήρωση & Νέα Λίστα</button>
         </div>
 
-        <div class="add-item-container">
-            <input type="text" id="item-input" placeholder="Προσθήκη αντικειμένου...">
-            <button id="add-button">+</button>
+        <!-- NEW: Replaced single input with a form -->
+        <div id="add-item-form">
+            <input type="text" id="item-name-input" placeholder="Όνομα προϊόντος" required>
+            <div class="details-inputs">
+                <input type="text" id="item-quantity-input" placeholder="Ποσότητα (π.χ. 1kg)">
+                <input type="text" id="item-notes-input" placeholder="Σημειώσεις (π.χ. χωρίς ζάχαρη)">
+            </div>
+            <button id="add-button">Προσθήκη στη Λίστα</button>
         </div>
     
         <h2>Προς Αγορά</h2>

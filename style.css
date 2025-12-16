@@ -23,61 +23,48 @@ header { display: flex; justify-content: space-between; align-items: center; bor
 
 .controls-container { margin: 20px 0; }
 #complete-list-button {
-    width: 100%;
-    padding: 12px;
-    background-color: #28a745;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-size: 1em;
-    cursor: pointer;
+    width: 100%; padding: 12px; background-color: #28a745; color: white;
+    border: none; border-radius: 4px; font-size: 1em; cursor: pointer;
 }
 #complete-list-button:hover { background-color: #218838; }
 
-
-.add-item-container { display: flex; margin-bottom: 20px; }
-#item-input { flex-grow: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px 0 0 4px; font-size: 1em;}
-#add-button { padding: 10px 15px; border: none; background-color: #007bff; color: white; border-radius: 0 4px 4px 0; cursor: pointer; font-size: 1.2em;}
+/* --- NEW STYLES for Add Item Form --- */
+#add-item-form {
+    background: #fff; padding: 15px; border-radius: 5px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+#add-item-form input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+#add-item-form .details-inputs { display: flex; gap: 10px; }
+#add-item-form .details-inputs input { margin-bottom: 0; }
+#add-button {
+    width: 100%; padding: 12px; border: none; background-color: #007bff;
+    color: white; border-radius: 4px; cursor: pointer; font-size: 1em; margin-top: 10px;
+}
 #add-button:hover { background-color: #0056b3; }
+/* --- END of New Form Styles --- */
 
 ul { list-style-type: none; padding: 0; }
 li { display: flex; align-items: center; background: white; padding: 12px; border-radius: 4px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-li input[type="checkbox"] { margin-right: 15px; width: 20px; height: 20px; }
-li label { flex-grow: 1; }
-#completed-list-ul li label { text-decoration: line-through; color: #888; }
+li .item-checkbox { margin-right: 15px; width: 20px; height: 20px; flex-shrink: 0; }
+/* --- NEW STYLES for Item Display --- */
+li .item-content { flex-grow: 1; }
+li .item-name { font-size: 1.1em; font-weight: 500; }
+li .item-details { font-size: 0.9em; color: #666; }
+li .item-details .quantity { font-weight: bold; }
+li .item-details .notes::before { content: ' — '; }
+#completed-list-ul .item-content { text-decoration: line-through; color: #888; }
+/* --- NEW STYLES for Delete Button --- */
+li .delete-button {
+    background: transparent; border: none; color: #dc3545; font-size: 1.5em;
+    cursor: pointer; padding: 5px 10px; opacity: 0.5; transition: opacity 0.2s;
+}
+li:hover .delete-button { opacity: 1; }
+/* --- END of New Item Styles --- */
 
 hr { border: 0; border-top: 1px solid #ddd; margin: 30px 0; }
 
-/* --- NEW STYLES FOR COLLAPSIBLE LISTS --- */
-#past-lists-ul > li {
-    display: block;
-    background-color: #e9ecef;
-    padding: 0;
-    margin-bottom: 10px;
-}
-.past-list-header {
-    padding: 15px;
-    font-weight: bold;
-    cursor: pointer;
-    position: relative;
-}
-.past-list-header::after {
-    content: '▼';
-    position: absolute;
-    right: 15px;
-    font-size: 0.8em;
-    transition: transform 0.2s;
-}
-.past-list-header.open::after {
-    transform: rotate(180deg);
-}
-.past-list-items {
-    display: none; /* Hidden by default */
-    padding: 0 15px 15px 15px;
-    background-color: #e9ecef;
-}
-.past-list-items li {
-    font-size: 0.9em;
-    background-color: #f8f9fa;
-}
-/* --- END OF NEW STYLES --- */
+#past-lists-ul > li { display: block; background-color: #e9ecef; padding: 0; margin-bottom: 10px; }
+.past-list-header { padding: 15px; font-weight: bold; cursor: pointer; position: relative; }
+.past-list-header::after { content: '▼'; position: absolute; right: 15px; font-size: 0.8em; transition: transform 0.2s; }
+.past-list-header.open::after { transform: rotate(180deg); }
+.past-list-items { display: none; padding: 0 15px 15px 15px; background-color: #e9ecef; }
+.past-list-items li { font-size: 0.9em; background-color: #f8f9fa; }
