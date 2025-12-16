@@ -6,9 +6,7 @@ body {
     padding: 20px;
 }
 
-#login-section, #unauthorized-section {
-    display: block; text-align: center; margin-top: 100px;
-}
+#login-section, #unauthorized-section { display: block; text-align: center; margin-top: 100px; }
 #app-content { display: none; max-width: 600px; margin: auto; }
 
 body.logged-in #login-section, body.logged-in #unauthorized-section { display: none; }
@@ -26,31 +24,25 @@ header { display: flex; justify-content: space-between; align-items: center; bor
 }
 #complete-list-button:hover { background-color: #218838; }
 
-/* --- NEW STYLES for Favorites Section --- */
 #favorites-section { margin-bottom: 20px; }
+/* NEW: Header for section titles with buttons */
+.section-header { display: flex; justify-content: space-between; align-items: center; }
+#manage-favorites-button {
+    background-color: #6c757d; color: white; border: none; padding: 4px 10px;
+    border-radius: 4px; font-size: 0.8em; cursor: pointer;
+}
+#manage-favorites-button:hover { background-color: #5a6268; }
+
 #favorites-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 10px;
-    background-color: #e9ecef;
-    border-radius: 5px;
+    display: flex; flex-wrap: wrap; gap: 8px; padding: 10px;
+    background-color: #e9ecef; border-radius: 5px;
 }
 .favorite-button {
-    background-color: #fff;
-    border: 1px solid #007bff;
-    color: #007bff;
-    padding: 5px 12px;
-    border-radius: 20px;
-    cursor: pointer;
-    font-size: 0.9em;
+    background-color: #fff; border: 1px solid #007bff; color: #007bff;
+    padding: 5px 12px; border-radius: 20px; cursor: pointer; font-size: 0.9em;
     transition: background-color 0.2s, color 0.2s;
 }
-.favorite-button:hover {
-    background-color: #007bff;
-    color: #fff;
-}
-/* --- END of Favorites Styles --- */
+.favorite-button:hover { background-color: #007bff; color: #fff; }
 
 #add-item-form {
     background: #fff; padding: 15px; border-radius: 5px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
@@ -58,13 +50,7 @@ header { display: flex; justify-content: space-between; align-items: center; bor
 #add-item-form input[type="text"] { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
 #add-item-form .details-inputs { display: flex; gap: 10px; }
 #add-item-form .details-inputs input { margin-bottom: 0; }
-/* --- NEW STYLE for Save Favorite Checkbox --- */
-.save-favorite-container {
-    display: flex;
-    align-items: center;
-    margin-top: 10px;
-    font-size: 0.9em;
-}
+.save-favorite-container { display: flex; align-items: center; margin-top: 10px; font-size: 0.9em; }
 #save-favorite-checkbox { margin-right: 8px; }
 
 #add-button {
@@ -90,10 +76,43 @@ li .delete-button {
 li:hover .delete-button { opacity: 1; }
 
 hr { border: 0; border-top: 1px solid #ddd; margin: 30px 0; }
-
 #past-lists-ul > li { display: block; background-color: #e9ecef; padding: 0; margin-bottom: 10px; }
 .past-list-header { padding: 15px; font-weight: bold; cursor: pointer; position: relative; }
 .past-list-header::after { content: '▼'; position: absolute; right: 15px; font-size: 0.8em; transition: transform 0.2s; }
 .past-list-header.open::after { transform: rotate(180deg); }
 .past-list-items { display: none; padding: 0 15px 15px 15px; background-color: #e9ecef; }
 .past-list-items li { font-size: 0.9em; background-color: #f8f9fa; }
+
+/* --- NEW MODAL STYLES --- */
+#favorites-modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); z-index: 1000;
+}
+#favorites-modal {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background-color: #fff; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    width: 90%; max-width: 500px; z-index: 1001;
+    max-height: 80vh; display: flex; flex-direction: column;
+}
+.modal-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 15px 20px; border-bottom: 1px solid #ddd;
+}
+.modal-header h2 { margin: 0; }
+#close-modal-button {
+    background: transparent; border: none; font-size: 1.8em;
+    cursor: pointer; line-height: 1; padding: 0;
+}
+#modal-favorites-list { padding: 10px; overflow-y: auto; }
+#modal-favorites-list li {
+    justify-content: space-between; padding: 10px 15px;
+}
+#modal-favorites-list .item-content { font-weight: 500; }
+.modal-actions button {
+    border: none; background-color: transparent; cursor: pointer;
+    font-size: 0.9em; padding: 5px 10px; border-radius: 4px;
+}
+.modal-edit-btn { color: #007bff; }
+.modal-delete-btn { color: #dc3545; }
+.modal-actions button:hover { background-color: #f1f1f1; }
+/* --- END OF MODAL STYLES --- */
