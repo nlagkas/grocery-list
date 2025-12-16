@@ -8,169 +8,199 @@ const firebaseConfig = {
     appId: "1:885212081182:web:525e03a5d9ba7613be520f"
   };
   
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const db = firebase.firestore();
-  
-  // --- 2. GET HTML ELEMENTS ---
-  const loginButton = document.getElementById('login-button');
-  const unauthorizedLogoutButton = document.getElementById('unauthorized-logout-button');
-  const logoutButton = document.getElementById('logout-button');
-  const userNameSpan = document.getElementById('user-name');
-  const listTitle = document.getElementById('list-title');
-  const itemInput = document.getElementById('item-input');
-  const addButton = document.getElementById('add-button');
-  const completeListButton = document.getElementById('complete-list-button');
-  const shoppingListUl = document.getElementById('shopping-list-ul');
-  const completedListUl = document.getElementById('completed-list-ul');
-  const pastListsUl = document.getElementById('past-lists-ul');
-  
-  // --- 3. GLOBAL STATE VARIABLES ---
-  let activeListId = null;
-  let unsubscribeFromItems = null; // Listener for items in the active list
-  let unsubscribeFromLists = null; // Listener for the list of past lists
-  
-  // --- 4. CORE FUNCTIONS ---
-  
-  // Function to format a Firestore timestamp into a readable date
-  function formatDate(timestamp) {
-      if (!timestamp) return '';
-      return new Date(timestamp.seconds * 1000).toLocaleDateString("el-GR", {
-          day: 'numeric',
-          month: 'long',
-          year: 'numeric'
-      });
-  }
-  
-  // Loads a specific list and listens for its items
-  function loadList(listDoc) {
-      activeListId = listDoc.id;
-      const listData = listDoc.data();
-      listTitle.textContent = `Λίστα: ${formatDate(listData.createdAt)}`;
-  
-      // Unsubscribe from any previous item listener
-      if (unsubscribeFromItems) unsubscribeFromItems();
-  
-      const itemsCollection = db.collection('lists').doc(activeListId).collection('items');
-      
-      // Listen for real-time updates on items
-      unsubscribeFromItems = itemsCollection.orderBy('name').onSnapshot(snapshot => {
-          shoppingListUl.innerHTML = '';
-          completedListUl.innerHTML = '';
-          snapshot.docs.forEach(doc => {
-              const item = doc.data();
-              const id = doc.id;
-              const li = document.createElement('li');
-              li.innerHTML = `<input type="checkbox" id="${id}" ${item.completed ? 'checked' : ''}><label for="${id}">${item.name}</label>`;
-              
-              if (item.completed) {
-                  completedListUl.appendChild(li);
-              } else {
-                  shoppingListUl.appendChild(li);
-              }
-  
-              // Add event listener for the checkbox
-              li.querySelector('input[type="checkbox"]').addEventListener('change', (e) => {
-                  itemsCollection.doc(id).update({ completed: e.target.checked });
-              });
-          });
-      });
-  }
-  
-  // Creates a new, empty, active list
-  async function createNewList() {
-      const newList = {
-          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          isActive: true,
-          completedAt: null
-      };
-      const newListRef = await db.collection('lists').add(newList);
-      const newListDoc = await newListRef.get();
-      loadList(newListDoc);
-  }
-  
-  // --- 5. EVENT LISTENERS & AUTH LOGIC ---
-  
-  // Handles adding a new item to the currently active list
-  const addItem = () => {
-      const itemName = itemInput.value.trim();
-      if (itemName && activeListId) {
-          db.collection('lists').doc(activeListId).collection('items').add({
-              name: itemName,
-              completed: false
-          });
-          itemInput.value = '';
-          itemInput.focus();
-      }
-  };
-  addButton.addEventListener('click', addItem);
-  itemInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') addItem(); });
-  
-  // Completes the current list and creates a new one
-  completeListButton.addEventListener('click', async () => {
-      if (!activeListId) return;
-  
-      const currentListRef = db.collection('lists').doc(activeListId);
-      await currentListRef.update({
-          isActive: false,
-          completedAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-  
-      // The main onAuthStateChanged listener will automatically create a new list.
-  });
-  
-  
-  // Main Authentication Logic
-  auth.onAuthStateChanged(user => {
-      if (user) {
-          const userDocRef = db.collection('allowedUsers').doc(user.uid);
-          userDocRef.get().then((doc) => {
-              if (doc.exists) {
-                  // --- USER IS AUTHORIZED ---
-                  document.body.classList.add('logged-in');
-                  userNameSpan.textContent = user.displayName;
-                  logoutButton.onclick = () => auth.signOut();
-                  
-                  // Find the active list or create a new one
-                  db.collection('lists').where('isActive', '==', true).limit(1).get().then(snapshot => {
-                      if (snapshot.empty) {
-                          createNewList();
-                      } else {
-                          loadList(snapshot.docs[0]);
-                      }
-                  });
-  
-                  // Listen for past lists
-                  if(unsubscribeFromLists) unsubscribeFromLists();
-                  unsubscribeFromLists = db.collection('lists').where('isActive', '==', false).orderBy('completedAt', 'desc').limit(10)
-                      .onSnapshot(snapshot => {
-                          pastListsUl.innerHTML = '';
-                          snapshot.docs.forEach(doc => {
-                              const list = doc.data();
-                              const li = document.createElement('li');
-                              li.textContent = `Λίστα της ${formatDate(list.completedAt)}`;
-                              pastListsUl.appendChild(li);
-                          });
-                      });
-  
-              } else {
-                  // --- USER IS NOT AUTHORIZED ---
-                  document.getElementById('login-section').style.display = 'none';
-                  document.getElementById('unauthorized-section').style.display = 'block';
-                  unauthorizedLogoutButton.onclick = () => auth.signOut();
-              }
-          });
-      } else {
-          // --- USER IS LOGGED OUT ---
-          document.body.classList.remove('logged-in');
-          document.getElementById('login-section').style.display = 'block';
-          document.getElementById('unauthorized-section').style.display = 'none';
-          
-          // Unsubscribe from all listeners
-          if (unsubscribeFromItems) unsubscribeFromItems();
-          if (unsubscribeFromLists) unsubscribeFromLists();
-          activeListId = null;
-      }
-  });
-  
-  loginButton.addEventListener('click', () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()));
+
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// --- 2. GET HTML ELEMENTS ---
+const loginButton = document.getElementById('login-button');
+const unauthorizedLogoutButton = document.getElementById('unauthorized-logout-button');
+const logoutButton = document.getElementById('logout-button');
+const userNameSpan = document.getElementById('user-name');
+const listTitle = document.getElementById('list-title');
+const itemInput = document.getElementById('item-input');
+const addButton = document.getElementById('add-button');
+const completeListButton = document.getElementById('complete-list-button');
+const shoppingListUl = document.getElementById('shopping-list-ul');
+const completedListUl = document.getElementById('completed-list-ul');
+const pastListsUl = document.getElementById('past-lists-ul');
+
+// --- 3. GLOBAL STATE VARIABLES ---
+let activeListId = null;
+let unsubscribeFromItems = null;
+let unsubscribeFromLists = null;
+
+// --- 4. CORE FUNCTIONS ---
+
+function formatDate(timestamp) {
+    if (!timestamp) return '...';
+    return new Date(timestamp.seconds * 1000).toLocaleDateString("el-GR", {
+        day: 'numeric', month: 'long', year: 'numeric'
+    });
+}
+
+function loadList(listDoc) {
+    activeListId = listDoc.id;
+    const listData = listDoc.data();
+    listTitle.textContent = `Λίστα: ${formatDate(listData.createdAt)}`;
+
+    if (unsubscribeFromItems) unsubscribeFromItems();
+
+    const itemsCollection = db.collection('lists').doc(activeListId).collection('items').orderBy('name');
+    
+    unsubscribeFromItems = itemsCollection.onSnapshot(snapshot => {
+        shoppingListUl.innerHTML = '';
+        completedListUl.innerHTML = '';
+        snapshot.docs.forEach(doc => {
+            const item = doc.data();
+            const id = doc.id;
+            const li = document.createElement('li');
+            li.innerHTML = `<input type="checkbox" id="${id}" ${item.completed ? 'checked' : ''}><label for="${id}">${item.name}</label>`;
+            
+            item.completed ? completedListUl.appendChild(li) : shoppingListUl.appendChild(li);
+
+            li.querySelector('input[type="checkbox"]').addEventListener('change', (e) => {
+                itemsCollection.doc(id).update({ completed: e.target.checked });
+            });
+        });
+    });
+}
+
+async function createNewList() {
+    console.log("Creating a new list...");
+    shoppingListUl.innerHTML = '<li>Δημιουργία νέας λίστας...</li>';
+    completedListUl.innerHTML = '';
+
+    const newList = {
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        isActive: true,
+        completedAt: null
+    };
+    const newListRef = await db.collection('lists').add(newList);
+    const newListDoc = await newListRef.get();
+    loadList(newListDoc);
+}
+
+// --- 5. EVENT LISTENERS & AUTH LOGIC ---
+
+const addItem = () => {
+    const itemName = itemInput.value.trim();
+    if (itemName && activeListId) {
+        db.collection('lists').doc(activeListId).collection('items').add({
+            name: itemName,
+            completed: false
+        });
+        itemInput.value = '';
+        itemInput.focus();
+    }
+};
+addButton.addEventListener('click', addItem);
+itemInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') addItem(); });
+
+// **BUG FIX & IMPROVEMENT**: Explicitly create a new list after completing the old one.
+completeListButton.addEventListener('click', async () => {
+    if (!activeListId || !confirm('Είστε σίγουροι ότι θέλετε να ολοκληρώσετε αυτή τη λίστα;')) return;
+
+    // 1. Mark the current list as inactive
+    const currentListRef = db.collection('lists').doc(activeListId);
+    await currentListRef.update({
+        isActive: false,
+        completedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    
+    // 2. Clear current list state
+    if (unsubscribeFromItems) unsubscribeFromItems();
+    activeListId = null;
+    shoppingListUl.innerHTML = '';
+    completedListUl.innerHTML = '';
+
+    // 3. Explicitly create the new list
+    await createNewList();
+});
+
+// --- Main Authentication Logic ---
+auth.onAuthStateChanged(user => {
+    if (user) {
+        const userDocRef = db.collection('allowedUsers').doc(user.uid);
+        userDocRef.get().then((doc) => {
+            if (doc.exists) {
+                // --- USER IS AUTHORIZED ---
+                document.body.classList.add('logged-in');
+                userNameSpan.textContent = user.displayName;
+                logoutButton.onclick = () => auth.signOut();
+                
+                // Find active list or create one
+                db.collection('lists').where('isActive', '==', true).limit(1).get().then(snapshot => {
+                    snapshot.empty ? createNewList() : loadList(snapshot.docs[0]);
+                });
+
+                // Listen for past lists
+                if(unsubscribeFromLists) unsubscribeFromLists();
+                unsubscribeFromLists = db.collection('lists').where('isActive', '==', false).orderBy('completedAt', 'desc').limit(10)
+                    .onSnapshot(snapshot => {
+                        pastListsUl.innerHTML = '';
+                        snapshot.docs.forEach(doc => {
+                            const list = doc.data();
+                            const listId = doc.id;
+                            
+                            // Create the collapsible structure
+                            const li = document.createElement('li');
+                            li.innerHTML = `
+                                <div class="past-list-header" data-id="${listId}">
+                                    Λίστα της ${formatDate(list.completedAt)}
+                                </div>
+                                <ul class="past-list-items"></ul>
+                            `;
+                            pastListsUl.appendChild(li);
+                        });
+                    });
+
+            } else { // User not authorized logic
+                document.getElementById('login-section').style.display = 'none';
+                document.getElementById('unauthorized-section').style.display = 'block';
+                unauthorizedLogoutButton.onclick = () => auth.signOut();
+            }
+        });
+    } else { // User logged out logic
+        document.body.classList.remove('logged-in');
+        document.getElementById('login-section').style.display = 'block';
+        document.getElementById('unauthorized-section').style.display = 'none';
+        if (unsubscribeFromItems) unsubscribeFromItems();
+        if (unsubscribeFromLists) unsubscribeFromLists();
+        activeListId = null;
+    }
+});
+
+// **NEW**: Event listener for clicking on past list headers
+pastListsUl.addEventListener('click', async (e) => {
+    if (!e.target.classList.contains('past-list-header')) return;
+
+    const header = e.target;
+    const listId = header.dataset.id;
+    const itemsUl = header.nextElementSibling;
+
+    header.classList.toggle('open');
+    const isOpen = header.classList.contains('open');
+
+    if (isOpen && itemsUl.children.length === 0) { // Fetch items only on first open
+        itemsUl.innerHTML = '<li>Φόρτωση...</li>';
+        const itemsSnapshot = await db.collection('lists').doc(listId).collection('items').orderBy('name').get();
+        itemsUl.innerHTML = '';
+        itemsSnapshot.forEach(doc => {
+            const item = doc.data();
+            const itemLi = document.createElement('li');
+            itemLi.textContent = item.name;
+            if (item.completed) {
+                itemLi.style.textDecoration = 'line-through';
+                itemLi.style.color = '#888';
+            }
+            itemsUl.appendChild(itemLi);
+        });
+    }
+
+    itemsUl.style.display = isOpen ? 'block' : 'none';
+});
+
+loginButton.addEventListener('click', () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()));

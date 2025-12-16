@@ -48,8 +48,36 @@ li label { flex-grow: 1; }
 
 hr { border: 0; border-top: 1px solid #ddd; margin: 30px 0; }
 
-#past-lists-ul li {
+/* --- NEW STYLES FOR COLLAPSIBLE LISTS --- */
+#past-lists-ul > li {
+    display: block;
     background-color: #e9ecef;
+    padding: 0;
+    margin-bottom: 10px;
+}
+.past-list-header {
     padding: 15px;
     font-weight: bold;
+    cursor: pointer;
+    position: relative;
 }
+.past-list-header::after {
+    content: '▼';
+    position: absolute;
+    right: 15px;
+    font-size: 0.8em;
+    transition: transform 0.2s;
+}
+.past-list-header.open::after {
+    transform: rotate(180deg);
+}
+.past-list-items {
+    display: none; /* Hidden by default */
+    padding: 0 15px 15px 15px;
+    background-color: #e9ecef;
+}
+.past-list-items li {
+    font-size: 0.9em;
+    background-color: #f8f9fa;
+}
+/* --- END OF NEW STYLES --- */
