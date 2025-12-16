@@ -1,5 +1,4 @@
 // --- 1. FIREBASE INITIALIZATION ---
-// This section configures and initializes the connection to your Firebase project.
 const firebaseConfig = {
     apiKey: "AIzaSyBwEf91Cf0m13JX0uIipIO1GwAOFR1tFD8",
     authDomain: "our-grocery-app.firebaseapp.com",
@@ -14,12 +13,12 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // --- 2. DOM ELEMENT REFERENCES ---
-// Storing all HTML element references in constants for easy access and performance.
 const loginButton = document.getElementById('login-button');
 const unauthorizedLogoutButton = document.getElementById('unauthorized-logout-button');
 const logoutButton = document.getElementById('logout-button');
 const userNameSpan = document.getElementById('user-name');
 const listTitle = document.getElementById('list-title');
+const shoppingModeToggle = document.getElementById('shopping-mode-toggle');
 const itemNameInput = document.getElementById('item-name-input');
 const itemQuantityInput = document.getElementById('item-quantity-input');
 const itemNotesInput = document.getElementById('item-notes-input');
@@ -29,6 +28,8 @@ const addButtonText = document.getElementById('add-button-text');
 const completeListButton = document.getElementById('complete-list-button');
 const shoppingListUl = document.getElementById('shopping-list-ul');
 const completedListUl = document.getElementById('completed-list-ul');
+const lookLaterSection = document.getElementById('look-later-section');
+const lookLaterListUl = document.getElementById('look-later-list-ul');
 const pastListsUl = document.getElementById('past-lists-ul');
 const favoritesContainer = document.getElementById('favorites-container');
 const manageFavoritesButton = document.getElementById('manage-favorites-button');
@@ -37,20 +38,19 @@ const closeModalButton = document.getElementById('close-modal-button');
 const modalFavoritesList = document.getElementById('modal-favorites-list');
 
 // --- 3. GLOBAL STATE MANAGEMENT ---
-// Variables that hold the application's state.
 let activeListId = null;
 let unsubscribeFromItems = null;
 let unsubscribeFromLists = null;
 let unsubscribeFromFavorites = null;
-let favoritesCache = []; // Local cache for favorite items to speed up UI operations.
-let editingFavoriteId = null; // A flag to know if the form is in "edit" mode.
+let favoritesCache = [];
+let editingFavoriteId = null;
 
 // --- 4. CORE LOGIC FUNCTIONS ---
 
 /**
  * Formats a Firestore timestamp into a readable Greek date string.
  * @param {firebase.firestore.Timestamp} timestamp The timestamp to format.
- * @returns {string} The formatted date string (e.g., "5 Μαΐου 2024").
+ * @returns {string} The formatted date string.
  */
 function formatDate(timestamp) {
     if (!timestamp) return '...';
@@ -60,27 +60,27 @@ function formatDate(timestamp) {
 }
 
 /**
- * Renders the active shopping list and its items, and attaches a real-time listener.
+ * Renders the active shopping list, sorting items into three status-based lists.
  * @param {firebase.firestore.DocumentSnapshot} listDoc The document snapshot of the list to load.
  */
 function loadList(listDoc) {
     activeListId = listDoc.id;
-    const listData = listDoc.data();
-    listTitle.textContent = `Λίστα: ${formatDate(listData.createdAt)}`;
+    listTitle.textContent = `Λίστα: ${formatDate(listDoc.data().createdAt)}`;
 
     if (unsubscribeFromItems) unsubscribeFromItems();
-
     const itemsRef = db.collection('lists').doc(activeListId).collection('items');
     
     unsubscribeFromItems = itemsRef.orderBy('name').onSnapshot(snapshot => {
         shoppingListUl.innerHTML = '';
         completedListUl.innerHTML = '';
+        lookLaterListUl.innerHTML = ''; // Clear the new list
+
         snapshot.forEach(doc => {
             const item = doc.data();
             const id = doc.id;
             const li = document.createElement('li');
             li.innerHTML = `
-                <input type="checkbox" class="item-checkbox" data-id="${id}" ${item.completed ? 'checked' : ''}>
+                <input type="checkbox" class="item-checkbox" data-id="${id}" ${item.status === 'completed' ? 'checked' : ''}>
                 <div class="item-content">
                     <div class="item-name">${item.name}</div>
                     <div class="item-details">
@@ -88,10 +88,22 @@ function loadList(listDoc) {
                         ${item.notes ? `<span class="notes">${item.notes}</span>` : ''}
                     </div>
                 </div>
+                <button class="cant-find-button" data-id="${id}">?</button>
                 <button class="delete-button" data-id="${id}">&times;</button>
             `;
-            item.completed ? completedListUl.appendChild(li) : shoppingListUl.appendChild(li);
+            
+            // Sort item into the correct list based on its status
+            if (item.status === 'completed') {
+                completedListUl.appendChild(li);
+            } else if (item.status === 'later') {
+                lookLaterListUl.appendChild(li);
+            } else { // Default to 'pending'
+                shoppingListUl.appendChild(li);
+            }
         });
+
+        // Toggle visibility of the "Look Later" section based on whether it has items
+        lookLaterSection.classList.toggle('empty', lookLaterListUl.children.length === 0);
     });
 }
 
@@ -121,40 +133,36 @@ function resetAddItemForm() {
     itemQuantityInput.value = '';
     itemNotesInput.value = '';
     saveFavoriteCheckbox.checked = false;
-    editingFavoriteId = null; // Clear the editing flag
+    editingFavoriteId = null;
     addButtonText.textContent = 'Προσθήκη στη Λίστα';
-    saveFavoriteCheckbox.parentElement.style.display = 'flex'; // Show the checkbox again
+    saveFavoriteCheckbox.parentElement.style.display = 'flex';
     itemNameInput.focus();
 }
 
 /**
- * Handles the logic for the main form button. It either adds a new item to the
- * list or updates an existing favorite, depending on the `editingFavoriteId` state.
+ * Handles the logic for the main form button, adding or updating items.
  */
 function addItemOrUpdateFavorite() {
     const itemName = itemNameInput.value.trim();
-    if (!itemName) return; // Item name is required.
+    if (!itemName) return;
 
     const itemQuantity = itemQuantityInput.value.trim();
     const itemNotes = itemNotesInput.value.trim();
 
-    // If editingFavoriteId has a value, we are in "update" mode.
     if (editingFavoriteId) {
         db.collection('favorites').doc(editingFavoriteId).set({
-            name: itemName,
-            quantity: itemQuantity,
-            notes: itemNotes,
+            name: itemName, quantity: itemQuantity, notes: itemNotes,
         }).then(() => {
-            console.log("Favorite updated successfully:", editingFavoriteId);
+            console.log("Favorite updated successfully");
             resetAddItemForm();
         });
-        return; // Stop here after updating.
+        return;
     }
 
-    // Otherwise, we are in "add new item" mode.
     if (activeListId) {
         db.collection('lists').doc(activeListId).collection('items').add({
-            name: itemName, quantity: itemQuantity, notes: itemNotes, completed: false
+            name: itemName, quantity: itemQuantity, notes: itemNotes,
+            status: 'pending' // Set default status for new items
         });
     }
     
@@ -162,17 +170,16 @@ function addItemOrUpdateFavorite() {
         const favoriteId = itemName.toLowerCase();
         db.collection('favorites').doc(favoriteId).set({
             name: itemName, quantity: itemQuantity, notes: itemNotes,
-        }, { merge: true }); // Use merge to avoid overwriting accidentally.
+        }, { merge: true });
     }
-
     resetAddItemForm();
 }
 
 /**
- * Populates the favorites management modal with the latest data and makes it visible.
+ * Populates and opens the favorites management modal.
  */
 function openFavoritesModal() {
-    modalFavoritesList.innerHTML = ''; // Clear previous list
+    modalFavoritesList.innerHTML = '';
     favoritesCache.forEach(fav => {
         const li = document.createElement('li');
         li.innerHTML = `
@@ -193,12 +200,12 @@ function openFavoritesModal() {
 function closeFavoritesModal() {
     favoritesModalOverlay.style.display = 'none';
     if (editingFavoriteId) {
-        resetAddItemForm(); // If user closes modal while editing, reset the form.
+        resetAddItemForm();
     }
 }
 
 /**
- * Handles clicks within the active lists using event delegation for checkboxes and deletes.
+ * Handles clicks within ALL active lists (To Buy, Look Later, Completed) using event delegation.
  * @param {Event} e The click event.
  */
 function handleListClick(e) {
@@ -209,7 +216,8 @@ function handleListClick(e) {
     const id = target.dataset.id;
 
     if (target.classList.contains('item-checkbox')) {
-        itemsRef.doc(id).update({ completed: target.checked });
+        const newStatus = target.checked ? 'completed' : 'pending';
+        itemsRef.doc(id).update({ status: newStatus });
     }
 
     if (target.classList.contains('delete-button')) {
@@ -217,34 +225,37 @@ function handleListClick(e) {
             itemsRef.doc(id).delete();
         }
     }
+
+    if (target.classList.contains('cant-find-button')) {
+        itemsRef.doc(id).update({ status: 'later' });
+    }
 }
 
 
 // --- 5. EVENT LISTENERS SETUP ---
-// This section connects user actions (clicks, key presses) to our logic functions.
+shoppingModeToggle.addEventListener('change', () => {
+    document.body.classList.toggle('shopping-mode', shoppingModeToggle.checked);
+});
 
-// Form and list actions
 addButton.addEventListener('click', addItemOrUpdateFavorite);
 itemNameInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') addItemOrUpdateFavorite(); });
+
 shoppingListUl.addEventListener('click', handleListClick);
 completedListUl.addEventListener('click', handleListClick);
+lookLaterListUl.addEventListener('click', handleListClick); // Add listener to the new list
 
-// Main app controls
 completeListButton.addEventListener('click', async () => {
     if (!activeListId || !confirm('Είστε σίγουροι ότι θέλετε να ολοκληρώσετε αυτή τη λίστα;')) return;
-    
     const currentListRef = db.collection('lists').doc(activeListId);
     await currentListRef.update({ isActive: false, completedAt: firebase.firestore.FieldValue.serverTimestamp() });
-    
     if (unsubscribeFromItems) unsubscribeFromItems();
     activeListId = null;
     shoppingListUl.innerHTML = '';
     completedListUl.innerHTML = '';
-    
+    lookLaterListUl.innerHTML = ''; // Clear this list too
     await createNewList();
 });
 
-// Favorites quick-add and management
 favoritesContainer.addEventListener('click', (e) => {
     if (e.target.classList.contains('favorite-button')) {
         const favoriteId = e.target.dataset.id;
@@ -261,7 +272,6 @@ manageFavoritesButton.addEventListener('click', openFavoritesModal);
 closeModalButton.addEventListener('click', closeFavoritesModal);
 favoritesModalOverlay.addEventListener('click', (e) => { if (e.target === favoritesModalOverlay) closeFavoritesModal(); });
 
-// Modal action listeners (Edit/Delete)
 modalFavoritesList.addEventListener('click', (e) => {
     const target = e.target;
     const favoriteId = target.dataset.id;
@@ -273,11 +283,9 @@ modalFavoritesList.addEventListener('click', (e) => {
             itemNameInput.value = favoriteData.name || '';
             itemQuantityInput.value = favoriteData.quantity || '';
             itemNotesInput.value = favoriteData.notes || '';
-            
             editingFavoriteId = favoriteId;
             addButtonText.textContent = 'Ενημέρωση Αγαπημένου';
             saveFavoriteCheckbox.parentElement.style.display = 'none';
-
             closeFavoritesModal();
             itemNameInput.focus();
         }
@@ -291,7 +299,6 @@ modalFavoritesList.addEventListener('click', (e) => {
     }
 });
 
-// Past lists viewer
 pastListsUl.addEventListener('click', async (e) => {
     if (!e.target.classList.contains('past-list-header')) return;
     const header = e.target;
@@ -307,35 +314,31 @@ pastListsUl.addEventListener('click', async (e) => {
             const item = doc.data();
             const itemLi = document.createElement('li');
             itemLi.textContent = `${item.name}${item.quantity ? ` (${item.quantity})` : ''}${item.notes ? ` - ${item.notes}` : ''}`;
-            if (item.completed) { itemLi.style.textDecoration = 'line-through'; itemLi.style.color = '#888'; }
+            if (item.status === 'completed') { itemLi.classList.add('completed-item'); }
             itemsUl.appendChild(itemLi);
         });
     }
     itemsUl.style.display = isOpen ? 'block' : 'none';
 });
 
-// Login button
 loginButton.addEventListener('click', () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()));
 
 
 // --- 6. MAIN AUTHENTICATION CONTROLLER ---
-// This is the entry point of the application. It runs when the user's login state changes.
 auth.onAuthStateChanged(user => {
     if (user) {
         const userDocRef = db.collection('allowedUsers').doc(user.uid);
         userDocRef.get().then((doc) => {
             if (doc.exists) {
-                // --- User is AUTHORIZED ---
+                // User is AUTHORIZED
                 document.body.classList.add('logged-in');
                 userNameSpan.textContent = user.displayName;
                 logoutButton.onclick = () => auth.signOut();
                 
-                // Find active list or create one if none exists
                 db.collection('lists').where('isActive', '==', true).limit(1).get().then(snapshot => {
                     snapshot.empty ? createNewList() : loadList(snapshot.docs[0]);
                 });
 
-                // Listen for past lists
                 if (unsubscribeFromLists) unsubscribeFromLists();
                 unsubscribeFromLists = db.collection('lists').where('isActive', '==', false).orderBy('completedAt', 'desc').limit(10)
                     .onSnapshot(snapshot => {
@@ -347,7 +350,6 @@ auth.onAuthStateChanged(user => {
                         });
                     });
 
-                // Listen for favorites and update the UI
                 if (unsubscribeFromFavorites) unsubscribeFromFavorites();
                 unsubscribeFromFavorites = db.collection('favorites').orderBy('name').onSnapshot(snapshot => {
                     favoritesContainer.innerHTML = '';
@@ -360,27 +362,24 @@ auth.onAuthStateChanged(user => {
                         button.dataset.id = doc.id;
                         favoritesContainer.appendChild(button);
                     });
-                    
-                    // If the modal is open, refresh its content to reflect any changes.
-                    if (favoritesModalOverlay.style.display === 'block') {
-                        openFavoritesModal();
-                    }
+                    if (favoritesModalOverlay.style.display === 'block') { openFavoritesModal(); }
                 });
 
             } else {
-                // --- User is NOT AUTHORIZED ---
+                // User is NOT AUTHORIZED
                 document.getElementById('login-section').style.display = 'none';
                 document.getElementById('unauthorized-section').style.display = 'block';
                 unauthorizedLogoutButton.onclick = () => auth.signOut();
             }
         });
     } else {
-        // --- User is LOGGED OUT ---
+        // User is LOGGED OUT
+        shoppingModeToggle.checked = false;
+        document.body.classList.remove('shopping-mode');
         document.body.classList.remove('logged-in');
         document.getElementById('login-section').style.display = 'block';
         document.getElementById('unauthorized-section').style.display = 'none';
         
-        // Unsubscribe from all real-time listeners to prevent errors and resource leaks.
         if (unsubscribeFromItems) unsubscribeFromItems();
         if (unsubscribeFromLists) unsubscribeFromLists();
         if (unsubscribeFromFavorites) unsubscribeFromFavorites();

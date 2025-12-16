@@ -29,6 +29,15 @@
                 <button id="logout-button">Αποσύνδεση</button>
             </div>
         </header>
+
+        <!-- NEW: Shopping Mode Toggle Switch -->
+        <div class="shopping-mode-toggle-container">
+            <label class="toggle-switch">
+                <input type="checkbox" id="shopping-mode-toggle">
+                <span class="slider"></span>
+            </label>
+            <label for="shopping-mode-toggle">Λειτουργία Αγορών</label>
+        </div>
         
         <div class="controls-container">
             <button id="complete-list-button">Ολοκλήρωση & Νέα Λίστα</button>
@@ -37,7 +46,6 @@
         <div id="favorites-section">
             <div class="section-header">
                 <h2>Αγαπημένα</h2>
-                <!-- NEW: Manage Favorites Button -->
                 <button id="manage-favorites-button">Διαχείριση</button>
             </div>
             <div id="favorites-container"></div>
@@ -53,7 +61,6 @@
                 <input type="checkbox" id="save-favorite-checkbox">
                 <label for="save-favorite-checkbox">Αποθήκευση στα αγαπημένα</label>
             </div>
-            <!-- UPDATED: Button text is now in a span for dynamic changes -->
             <button id="add-button">
                 <span id="add-button-text">Προσθήκη στη Λίστα</span>
             </button>
@@ -61,26 +68,29 @@
     
         <h2>Προς Αγορά</h2>
         <ul id="shopping-list-ul"></ul>
+
+        <!-- NEW: "Look for Later" List -->
+        <div id="look-later-section">
+            <h2>Αναζήτηση Αργότερα</h2>
+            <ul id="look-later-list-ul"></ul>
+        </div>
     
         <h2>Αγορασμένα</h2>
         <ul id="completed-list-ul"></ul>
 
         <hr>
-
         <h2>Παλαιότερες Λίστες</h2>
         <ul id="past-lists-ul"></ul>
     </div>
 
-    <!-- NEW: Favorites Management Modal -->
+    <!-- Favorites Management Modal (unchanged) -->
     <div id="favorites-modal-overlay" style="display: none;">
         <div id="favorites-modal">
             <div class="modal-header">
                 <h2>Διαχείριση Αγαπημένων</h2>
                 <button id="close-modal-button">&times;</button>
             </div>
-            <ul id="modal-favorites-list">
-                <!-- Favorites to manage will be populated here by JS -->
-            </ul>
+            <ul id="modal-favorites-list"></ul>
         </div>
     </div>
 
