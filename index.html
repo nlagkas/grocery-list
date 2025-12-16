@@ -14,7 +14,7 @@
         <button id="login-button">Σύνδεση με Google</button>
     </div>
 
-    <div id="unauthorized-section" style="display: none; text-align: center; margin-top: 100px;">
+    <div id="unauthorized-section" style="display: none;">
         <h1>Πρόσβαση Μη Εγκεκριμένη</h1>
         <p>Ο λογαριασμός σας δεν έχει πρόσβαση σε αυτήν την εφαρμογή.</p>
         <button id="unauthorized-logout-button">Αποσύνδεση</button>
@@ -22,13 +22,17 @@
 
     <div id="app-content">
         <header>
-            <h1>Η Λίστα μας</h1>
+            <h1 id="list-title">Η Λίστα μας</h1>
             <div id="user-info">
                 <span id="user-name"></span>
                 <button id="logout-button">Αποσύνδεση</button>
             </div>
         </header>
         
+        <div class="controls-container">
+            <button id="complete-list-button">Ολοκλήρωση & Νέα Λίστα</button>
+        </div>
+
         <div class="add-item-container">
             <input type="text" id="item-input" placeholder="Προσθήκη αντικειμένου...">
             <button id="add-button">+</button>
@@ -39,6 +43,11 @@
     
         <h2>Αγορασμένα</h2>
         <ul id="completed-list-ul"></ul>
+
+        <hr>
+
+        <h2>Παλαιότερες Λίστες</h2>
+        <ul id="past-lists-ul"></ul>
     </div>
 
     <!-- Firebase SDKs -->
