@@ -1,11 +1,11 @@
 // --- 1. INITIALIZATION ---
 const firebaseConfig = {
-    apiKey: "AIza...",
-    authDomain: "your-project.firebaseapp.com",
-    projectId: "your-project-id",
-    storageBucket: "your-project.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "1:12345:web:abcdef"
+    apiKey: "AIzaSyBwEf91Cf0m13JX0uIipIO1GwAOFR1tFD8",
+    authDomain: "our-grocery-app.firebaseapp.com",
+    projectId: "our-grocery-app",
+    storageBucket: "our-grocery-app.firebasestorage.app",
+    messagingSenderId: "885212081182",
+    appId: "1:885212081182:web:525e03a5d9ba7613be520f"
   };
   
   firebase.initializeApp(firebaseConfig);
