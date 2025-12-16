@@ -1,290 +1,440 @@
-body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+/* =========================================================
+   Global Base Styles
+   ========================================================= */
+
+   body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 Roboto, Helvetica, Arial, sans-serif;
     background-color: #f4f4f9;
     color: #333;
     margin: 0;
     padding: 20px;
 }
 
-#login-section, #unauthorized-section {
+
+/* =========================================================
+   Authentication & App Visibility States
+   ========================================================= */
+
+/* Login / Unauthorized screens */
+#login-section,
+#unauthorized-section {
     display: block;
     text-align: center;
     margin-top: 100px;
 }
+
+/* Main app container */
 #app-content {
     display: none;
     max-width: 600px;
     margin: auto;
 }
-body.logged-in #login-section, body.logged-in #unauthorized-section {
+
+/* Logged-in state toggles */
+body.logged-in #login-section,
+body.logged-in #unauthorized-section {
     display: none;
 }
+
 body.logged-in #app-content {
     display: block;
 }
 
-h1, h2 {
+
+/* =========================================================
+   Typography & Headers
+   ========================================================= */
+
+h1,
+h2 {
     color: #555;
 }
+
 header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid #ddd;
-    padding-bottom: 10px;
     flex-wrap: wrap;
+
+    padding-bottom: 10px;
+    border-bottom: 1px solid #ddd;
 }
+
 #list-title {
     font-size: 1.5em;
     margin: 0;
 }
+
 #user-info {
     font-size: 0.9em;
     text-align: right;
 }
 
-/* --- Shopping Mode Toggle Styles --- */
+
+/* =========================================================
+   Shopping Mode Toggle
+   (Visual toggle switch component)
+   ========================================================= */
+
 .shopping-mode-toggle-container {
     display: flex;
     align-items: center;
     justify-content: flex-end;
+
     margin: 15px 0 0;
     gap: 10px;
     font-size: 0.9em;
 }
+
 .toggle-switch {
     position: relative;
     display: inline-block;
     width: 44px;
     height: 24px;
 }
+
+/* Hide native checkbox */
 .toggle-switch input {
     opacity: 0;
     width: 0;
     height: 0;
 }
+
+/* Toggle slider */
 .slider {
     position: absolute;
+    inset: 0;
+
     cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
     background-color: #ccc;
-    transition: .4s;
+    transition: 0.4s;
     border-radius: 24px;
 }
-.slider:before {
-    position: absolute;
+
+.slider::before {
     content: "";
-    height: 18px;
+    position: absolute;
+
     width: 18px;
+    height: 18px;
     left: 3px;
     bottom: 3px;
-    background-color: white;
-    transition: .4s;
+
+    background-color: #fff;
     border-radius: 50%;
+    transition: 0.4s;
 }
+
+/* Checked state */
 input:checked + .slider {
     background-color: #28a745;
 }
-input:checked + .slider:before {
+
+input:checked + .slider::before {
     transform: translateX(20px);
 }
+
+
+/* =========================================================
+   List Controls
+   ========================================================= */
 
 .controls-container {
     margin: 20px 0;
 }
+
 #complete-list-button {
     width: 100%;
     padding: 12px;
+
     background-color: #28a745;
-    color: white;
+    color: #fff;
     border: none;
     border-radius: 4px;
+
     font-size: 1em;
     cursor: pointer;
 }
+
 #complete-list-button:hover {
     background-color: #218838;
 }
 
+
+/* =========================================================
+   Favorites Section
+   ========================================================= */
+
 #favorites-section {
     margin-bottom: 20px;
 }
+
 .section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
+
 #manage-favorites-button {
     background-color: #6c757d;
-    color: white;
+    color: #fff;
+
     border: none;
     padding: 4px 10px;
     border-radius: 4px;
+
     font-size: 0.8em;
     cursor: pointer;
 }
+
 #manage-favorites-button:hover {
     background-color: #5a6268;
 }
+
+
+/* =========================================================
+   Favorites Category Tabs
+   ========================================================= */
+
+#favorites-category-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+
+    margin-bottom: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.category-tab {
+    padding: 8px 12px;
+
+    background-color: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+
+    font-size: 0.9em;
+    cursor: pointer;
+}
+
+.category-tab.active {
+    font-weight: bold;
+    color: #007bff;
+    border-bottom-color: #007bff;
+}
+
+
+/* =========================================================
+   Favorite Item Buttons
+   ========================================================= */
+
 #favorites-container {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    padding: 10px;
-    background-color: #e9ecef;
-    border-radius: 5px;
+    padding-top: 10px;
 }
+
 .favorite-button {
     background-color: #fff;
     border: 1px solid #007bff;
     color: #007bff;
+
     padding: 5px 12px;
     border-radius: 20px;
-    cursor: pointer;
+
     font-size: 0.9em;
+    cursor: pointer;
     transition: background-color 0.2s, color 0.2s;
 }
+
 .favorite-button:hover {
     background-color: #007bff;
     color: #fff;
 }
 
+
+/* =========================================================
+   Add Item Form
+   ========================================================= */
+
 #add-item-form {
-    background: #fff;
+    background-color: #fff;
     padding: 15px;
-    border-radius: 5px;
     margin-bottom: 20px;
+
+    border-radius: 5px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
+
 #add-item-form input[type="text"] {
     width: 100%;
     padding: 10px;
     margin-bottom: 10px;
+
     border: 1px solid #ccc;
     border-radius: 4px;
     box-sizing: border-box;
 }
+
 #add-item-form .details-inputs {
     display: flex;
     gap: 10px;
 }
+
 #add-item-form .details-inputs input {
     margin-bottom: 0;
 }
+
 .save-favorite-container {
     display: flex;
     align-items: center;
+
     margin-top: 10px;
     font-size: 0.9em;
 }
+
 #save-favorite-checkbox {
     margin-right: 8px;
 }
+
 #add-button {
     width: 100%;
-    padding: 12px;
-    border: none;
-    background-color: #007bff;
-    color: white;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 1em;
     margin-top: 10px;
+    padding: 12px;
+
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+
+    font-size: 1em;
+    cursor: pointer;
 }
+
 #add-button:hover {
     background-color: #0056b3;
 }
 
+
+/* =========================================================
+   List & Item Styling
+   ========================================================= */
+
 ul {
-    list-style-type: none;
+    list-style: none;
     padding: 0;
 }
 
-/* --- Base Item Styles --- */
 li {
     display: flex;
     align-items: center;
-    background: white;
+
+    background-color: #fff;
     padding: 12px;
-    border-radius: 4px;
     margin-bottom: 8px;
+
+    border-radius: 4px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
+
 li .item-checkbox {
-    margin-right: 15px;
     width: 20px;
     height: 20px;
+    margin-right: 15px;
     flex-shrink: 0;
 }
+
 li .item-content {
     flex-grow: 1;
 }
+
 li .item-name {
     font-size: 1.1em;
     font-weight: 500;
 }
+
 li .item-details {
     font-size: 0.9em;
     color: #666;
 }
+
 li .item-details .quantity {
     font-weight: bold;
 }
+
 li .item-details .notes::before {
-    content: ' — ';
+    content: " — ";
 }
-#completed-list-ul .item-content, #past-lists-ul .completed-item {
+
+/* Completed & past items */
+#completed-list-ul .item-content,
+#past-lists-ul .completed-item {
     text-decoration: line-through;
     color: #888;
 }
+
+/* Delete button */
 li .delete-button {
     background: transparent;
     border: none;
+
     color: #dc3545;
     font-size: 1.5em;
-    cursor: pointer;
+
     padding: 5px 10px;
+    cursor: pointer;
     opacity: 0.5;
     transition: opacity 0.2s;
 }
+
 li:hover .delete-button {
     opacity: 1;
 }
 
-/* --- "Can't Find It" and "Look Later" Styles --- */
+
+/* =========================================================
+   Shopping Mode Overrides
+   ========================================================= */
+
 .cant-find-button {
-    display: none; /* Hidden by default, shown in shopping mode */
-    background: #ffc107;
-    color: #333;
-    border: none;
-    border-radius: 50%;
+    display: none;
+
     width: 28px;
     height: 28px;
+    margin-left: 10px;
+
+    background-color: #ffc107;
+    color: #333;
+
+    border: none;
+    border-radius: 50%;
+
     font-size: 1.1em;
     font-weight: bold;
     cursor: pointer;
-    margin-left: 10px;
     flex-shrink: 0;
 }
+
 .cant-find-button:hover {
-    background: #e0a800;
+    background-color: #e0a800;
 }
+
 #look-later-section {
-    display: none; /* Hidden by default */
+    display: none;
 }
+
 #look-later-list-ul li {
     background-color: #fffbe6;
 }
 
-/* --- SHOPPING MODE ACTIVE STYLES --- */
+/* Shopping mode layout adjustments */
 body.shopping-mode .shopping-mode-toggle-container {
     margin-bottom: 20px;
 }
-/* Hide unnecessary elements in shopping mode */
-body.shopping-mode .controls-container,
+
+body.shopping-mode
+.controls-container,
 body.shopping-mode #favorites-section,
 body.shopping-mode #add-item-form,
 body.shopping-mode hr,
@@ -293,95 +443,217 @@ body.shopping-mode #past-lists-ul,
 body.shopping-mode .delete-button {
     display: none;
 }
-/* Show "Look Later" section only if it has items */
+
 body.shopping-mode #look-later-section:not(.empty) {
     display: block;
 }
-/* Show the "Can't Find" button on items to buy */
+
 body.shopping-mode #shopping-list-ul .cant-find-button {
     display: block;
 }
-/* Enlarge items and tap targets for usability */
+
 body.shopping-mode li {
     padding: 16px;
 }
+
 body.shopping-mode .item-checkbox {
     width: 28px;
     height: 28px;
 }
+
 body.shopping-mode .item-name {
     font-size: 1.3em;
 }
+
 body.shopping-mode .item-details {
     font-size: 1em;
 }
 
+
+/* =========================================================
+   Past Lists
+   ========================================================= */
+
 hr {
-    border: 0;
+    border: none;
     border-top: 1px solid #ddd;
     margin: 30px 0;
 }
+
 #past-lists-ul > li {
     display: block;
-    background-color: #e9ecef;
     padding: 0;
     margin-bottom: 10px;
+    background-color: #e9ecef;
 }
+
 .past-list-header {
     padding: 15px;
     font-weight: bold;
     cursor: pointer;
     position: relative;
 }
+
 .past-list-header::after {
-    content: '▼';
+    content: "▼";
     position: absolute;
     right: 15px;
+
     font-size: 0.8em;
     transition: transform 0.2s;
 }
+
 .past-list-header.open::after {
     transform: rotate(180deg);
 }
+
 .past-list-items {
     display: none;
-    padding: 0 15px 15px 15px;
+    padding: 0 15px 15px;
     background-color: #e9ecef;
 }
+
 .past-list-items li {
-    font-size: 0.9em;
     background-color: #f8f9fa;
+    font-size: 0.9em;
 }
 
-/* --- Modal Styles --- */
+
+/* =========================================================
+   Favorites Management Modal
+   ========================================================= */
+
 #favorites-modal-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background-color: rgba(0, 0, 0, 0.5); z-index: 1000;
+    position: fixed;
+    inset: 0;
+
+    background-color: rgba(0,0,0,0.5);
+    z-index: 1000;
 }
+
 #favorites-modal {
-    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    background-color: #fff; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    width: 90%; max-width: 500px; z-index: 1001;
-    max-height: 80vh; display: flex; flex-direction: column;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+
+    display: flex;
+    flex-direction: column;
+    z-index: 1001;
 }
+
 .modal-header {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 15px 20px; border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    padding: 15px 20px;
+    border-bottom: 1px solid #ddd;
 }
-.modal-header h2 { margin: 0; }
+
+.modal-header h2 {
+    margin: 0;
+}
+
 #close-modal-button {
-    background: transparent; border: none; font-size: 1.8em;
-    cursor: pointer; line-height: 1; padding: 0;
+    background: transparent;
+    border: none;
+
+    font-size: 1.8em;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
 }
-#modal-favorites-list { padding: 10px; overflow-y: auto; }
+
+
+/* Add Category Form */
+.modal-add-category {
+    display: flex;
+    gap: 10px;
+
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.modal-add-category input {
+    flex-grow: 1;
+    padding: 8px;
+
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.modal-add-category button {
+    background-color: #28a745;
+    color: #fff;
+
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+
+    cursor: pointer;
+}
+
+
+/* Modal Favorites List */
+#modal-favorites-list {
+    padding: 10px;
+    overflow-y: auto;
+}
+
 #modal-favorites-list li {
-    justify-content: space-between; padding: 10px 15px;
+    flex-wrap: wrap;
+    justify-content: space-between;
 }
-#modal-favorites-list .item-content { font-weight: 500; }
+
+#modal-favorites-list .item-content {
+    font-weight: 500;
+    margin-bottom: 10px;
+}
+
+#modal-favorites-list .item-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.modal-category-select {
+    flex-grow: 1;
+    padding: 5px;
+
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #fafafa;
+}
+
 .modal-actions button {
-    border: none; background-color: transparent; cursor: pointer;
-    font-size: 0.9em; padding: 5px 10px; border-radius: 4px;
+    background: transparent;
+    border: none;
+
+    padding: 5px 10px;
+    border-radius: 4px;
+
+    font-size: 0.9em;
+    cursor: pointer;
 }
-.modal-edit-btn { color: #007bff; }
-.modal-delete-btn { color: #dc3545; }
-.modal-actions button:hover { background-color: #f1f1f1; }
+
+.modal-edit-btn {
+    color: #007bff;
+}
+
+.modal-delete-btn {
+    color: #dc3545;
+}
+
+.modal-actions button:hover {
+    background-color: #f1f1f1;
+}

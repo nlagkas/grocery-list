@@ -1,5 +1,5 @@
 // A unique name for our cache
-const CACHE_NAME = 'grocery-list-cache-v1';
+const CACHE_NAME = 'grocery-list-cache-v2';
 
 // The list of files that make up the "app shell" - everything needed to run offline.
 const urlsToCache = [

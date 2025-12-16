@@ -1,4 +1,10 @@
-// --- 1. FIREBASE INITIALIZATION ---
+/* =========================================================
+   1. FIREBASE INITIALIZATION
+   ========================================================= */
+
+/**
+ * Firebase project configuration
+ */
 const firebaseConfig = {
     apiKey: "AIzaSyBwEf91Cf0m13JX0uIipIO1GwAOFR1tFD8",
     authDomain: "our-grocery-app.firebaseapp.com",
@@ -8,396 +14,432 @@ const firebaseConfig = {
     appId: "1:885212081182:web:525e03a5d9ba7613be520f"
 };
 
+/* Initialize Firebase services */
 firebase.initializeApp(firebaseConfig);
+
 const auth = firebase.auth();
-const db = firebase.firestore();
+const db   = firebase.firestore();
 
-// --- 2. DOM ELEMENT REFERENCES ---
-const loginButton = document.getElementById('login-button');
-const unauthorizedLogoutButton = document.getElementById('unauthorized-logout-button');
-const logoutButton = document.getElementById('logout-button');
-const userNameSpan = document.getElementById('user-name');
-const listTitle = document.getElementById('list-title');
-const shoppingModeToggle = document.getElementById('shopping-mode-toggle');
-const itemNameInput = document.getElementById('item-name-input');
-const itemQuantityInput = document.getElementById('item-quantity-input');
-const itemNotesInput = document.getElementById('item-notes-input');
-const saveFavoriteCheckbox = document.getElementById('save-favorite-checkbox');
-const addButton = document.getElementById('add-button');
-const addButtonText = document.getElementById('add-button-text');
-const completeListButton = document.getElementById('complete-list-button');
-const shoppingListUl = document.getElementById('shopping-list-ul');
-const completedListUl = document.getElementById('completed-list-ul');
-const lookLaterSection = document.getElementById('look-later-section');
-const lookLaterListUl = document.getElementById('look-later-list-ul');
-const pastListsUl = document.getElementById('past-lists-ul');
-const favoritesContainer = document.getElementById('favorites-container');
-const manageFavoritesButton = document.getElementById('manage-favorites-button');
-const favoritesModalOverlay = document.getElementById('favorites-modal-overlay');
-const closeModalButton = document.getElementById('close-modal-button');
-const modalFavoritesList = document.getElementById('modal-favorites-list');
 
-// --- 3. GLOBAL STATE MANAGEMENT ---
+/* =========================================================
+   2. DOM ELEMENT REFERENCES
+   ========================================================= */
+
+/* Authentication */
+const loginButton               = document.getElementById('login-button');
+const unauthorizedLogoutButton  = document.getElementById('unauthorized-logout-button');
+const logoutButton              = document.getElementById('logout-button');
+const userNameSpan              = document.getElementById('user-name');
+
+/* Header & controls */
+const listTitle                 = document.getElementById('list-title');
+const shoppingModeToggle        = document.getElementById('shopping-mode-toggle');
+const completeListButton        = document.getElementById('complete-list-button');
+
+/* Add item form */
+const itemNameInput             = document.getElementById('item-name-input');
+const itemQuantityInput         = document.getElementById('item-quantity-input');
+const itemNotesInput            = document.getElementById('item-notes-input');
+const saveFavoriteCheckbox      = document.getElementById('save-favorite-checkbox');
+const addButton                 = document.getElementById('add-button');
+const addButtonText             = document.getElementById('add-button-text');
+
+/* Lists */
+const shoppingListUl            = document.getElementById('shopping-list-ul');
+const completedListUl           = document.getElementById('completed-list-ul');
+const lookLaterSection          = document.getElementById('look-later-section');
+const lookLaterListUl           = document.getElementById('look-later-list-ul');
+const pastListsUl               = document.getElementById('past-lists-ul');
+
+/* Favorites */
+const favoritesContainer        = document.getElementById('favorites-container');
+const favoritesCategoryTabs     = document.getElementById('favorites-category-tabs');
+const manageFavoritesButton     = document.getElementById('manage-favorites-button');
+
+/* Favorites modal */
+const favoritesModalOverlay     = document.getElementById('favorites-modal-overlay');
+const closeModalButton          = document.getElementById('close-modal-button');
+const modalFavoritesList        = document.getElementById('modal-favorites-list');
+const newCategoryInput          = document.getElementById('new-category-input');
+const addCategoryButton         = document.getElementById('add-category-button');
+
+
+/* =========================================================
+   3. GLOBAL STATE
+   ========================================================= */
+
+/* Active list state */
 let activeListId = null;
-let unsubscribeFromItems = null;
-let unsubscribeFromLists = null;
-let unsubscribeFromFavorites = null;
-let favoritesCache = [];
-let editingFavoriteId = null;
 
-// --- 4. CORE LOGIC FUNCTIONS ---
+/* Firestore unsubscribe handlers */
+let unsubscribeFromItems      = null;
+let unsubscribeFromLists      = null;
+let unsubscribeFromFavorites  = null;
+let unsubscribeFromCategories = null;
+
+/* Cached data */
+let favoritesCache   = [];
+let categoriesCache  = [];
+
+/* UI state */
+let editingFavoriteId = null;
+let activeCategoryId  = 'all';   // all | none | categoryId
+
+
+/* =========================================================
+   4. CORE HELPER FUNCTIONS
+   ========================================================= */
 
 /**
- * Formats a Firestore timestamp into a readable Greek date string.
- * @param {firebase.firestore.Timestamp} timestamp The timestamp to format.
- * @returns {string} The formatted date string.
+ * Formats Firestore timestamp to Greek locale date
  */
 function formatDate(timestamp) {
     if (!timestamp) return '...';
-    return new Date(timestamp.seconds * 1000).toLocaleDateString("el-GR", {
-        day: 'numeric', month: 'long', year: 'numeric'
-    });
+
+    return new Date(timestamp.seconds * 1000).toLocaleDateString(
+        "el-GR",
+        { day: 'numeric', month: 'long', year: 'numeric' }
+    );
 }
 
+
 /**
- * Renders the active shopping list, sorting items into three status-based lists.
- * @param {firebase.firestore.DocumentSnapshot} listDoc The document snapshot of the list to load.
+ * Loads a shopping list and listens for its items
  */
 function loadList(listDoc) {
     activeListId = listDoc.id;
     listTitle.textContent = `Λίστα: ${formatDate(listDoc.data().createdAt)}`;
 
     if (unsubscribeFromItems) unsubscribeFromItems();
-    const itemsRef = db.collection('lists').doc(activeListId).collection('items');
-    
-    unsubscribeFromItems = itemsRef.orderBy('name').onSnapshot(snapshot => {
-        shoppingListUl.innerHTML = '';
-        completedListUl.innerHTML = '';
-        lookLaterListUl.innerHTML = ''; // Clear the new list
 
-        snapshot.forEach(doc => {
-            const item = doc.data();
-            const id = doc.id;
-            const li = document.createElement('li');
-            li.innerHTML = `
-                <input type="checkbox" class="item-checkbox" data-id="${id}" ${item.status === 'completed' ? 'checked' : ''}>
-                <div class="item-content">
-                    <div class="item-name">${item.name}</div>
-                    <div class="item-details">
-                        ${item.quantity ? `<span class="quantity">${item.quantity}</span>` : ''}
-                        ${item.notes ? `<span class="notes">${item.notes}</span>` : ''}
+    const itemsRef = db.collection('lists')
+                       .doc(activeListId)
+                       .collection('items');
+
+    unsubscribeFromItems = itemsRef
+        .orderBy('name')
+        .onSnapshot(snapshot => {
+
+            shoppingListUl.innerHTML = '';
+            completedListUl.innerHTML = '';
+            lookLaterListUl.innerHTML = '';
+
+            snapshot.forEach(doc => {
+                const item = doc.data();
+                const id   = doc.id;
+
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <input type="checkbox"
+                           class="item-checkbox"
+                           data-id="${id}"
+                           ${item.status === 'completed' ? 'checked' : ''}>
+
+                    <div class="item-content">
+                        <div class="item-name">${item.name}</div>
+                        <div class="item-details">
+                            ${item.quantity ? `<span class="quantity">${item.quantity}</span>` : ''}
+                            ${item.notes ? `<span class="notes">${item.notes}</span>` : ''}
+                        </div>
                     </div>
-                </div>
-                <button class="cant-find-button" data-id="${id}">?</button>
-                <button class="delete-button" data-id="${id}">&times;</button>
-            `;
-            
-            // Sort item into the correct list based on its status
-            if (item.status === 'completed') {
-                completedListUl.appendChild(li);
-            } else if (item.status === 'later') {
-                lookLaterListUl.appendChild(li);
-            } else { // Default to 'pending'
-                shoppingListUl.appendChild(li);
-            }
-        });
 
-        // Toggle visibility of the "Look Later" section based on whether it has items
-        lookLaterSection.classList.toggle('empty', lookLaterListUl.children.length === 0);
-    });
+                    <button class="cant-find-button" data-id="${id}">?</button>
+                    <button class="delete-button" data-id="${id}">&times;</button>
+                `;
+
+                if (item.status === 'completed') {
+                    completedListUl.appendChild(li);
+                } else if (item.status === 'later') {
+                    lookLaterListUl.appendChild(li);
+                } else {
+                    shoppingListUl.appendChild(li);
+                }
+            });
+
+            lookLaterSection.classList.toggle(
+                'empty',
+                lookLaterListUl.children.length === 0
+            );
+        });
 }
 
+
 /**
- * Creates a new, empty, active shopping list document in Firestore.
+ * Creates a new active shopping list
  */
 async function createNewList() {
-    console.log("Creating a new list...");
     shoppingListUl.innerHTML = '<li>Δημιουργία νέας λίστας...</li>';
     completedListUl.innerHTML = '';
 
-    const newList = {
+    const newListRef = await db.collection('lists').add({
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         isActive: true,
         completedAt: null
-    };
-    const newListRef = await db.collection('lists').add(newList);
-    const newListDoc = await newListRef.get();
-    loadList(newListDoc);
+    });
+
+    loadList(await newListRef.get());
 }
 
+
 /**
- * Resets the "Add Item" form to its default, empty state.
+ * Resets the add-item form UI
  */
 function resetAddItemForm() {
-    itemNameInput.value = '';
+    itemNameInput.value     = '';
     itemQuantityInput.value = '';
-    itemNotesInput.value = '';
+    itemNotesInput.value    = '';
+
     saveFavoriteCheckbox.checked = false;
     editingFavoriteId = null;
+
     addButtonText.textContent = 'Προσθήκη στη Λίστα';
     saveFavoriteCheckbox.parentElement.style.display = 'flex';
+
     itemNameInput.focus();
 }
 
+
+/* =========================================================
+   5. FAVORITES RENDERING
+   ========================================================= */
+
 /**
- * Handles the logic for the main form button, adding or updating items.
+ * Renders category tabs and filtered favorite buttons
  */
-function addItemOrUpdateFavorite() {
-    const itemName = itemNameInput.value.trim();
-    if (!itemName) return;
+function renderFavorites() {
 
-    const itemQuantity = itemQuantityInput.value.trim();
-    const itemNotes = itemNotesInput.value.trim();
+    /* ----- Category Tabs ----- */
+    favoritesCategoryTabs.innerHTML = '';
 
-    if (editingFavoriteId) {
-        db.collection('favorites').doc(editingFavoriteId).set({
-            name: itemName, quantity: itemQuantity, notes: itemNotes,
-        }).then(() => {
-            console.log("Favorite updated successfully");
-            resetAddItemForm();
+    const createTab = (label, id) => {
+        const tab = document.createElement('button');
+        tab.className = 'category-tab';
+        tab.textContent = label;
+        tab.dataset.id = id;
+        if (id === activeCategoryId) tab.classList.add('active');
+        favoritesCategoryTabs.appendChild(tab);
+    };
+
+    createTab('Όλα', 'all');
+    createTab('Χωρίς Κατηγορία', 'none');
+
+    categoriesCache.forEach(cat => {
+        createTab(cat.name, cat.id);
+    });
+
+    /* ----- Favorite Buttons ----- */
+    favoritesContainer.innerHTML = '';
+
+    favoritesCache
+        .filter(fav => {
+            if (activeCategoryId === 'all') return true;
+            if (activeCategoryId === 'none') return !fav.categoryId;
+            return fav.categoryId === activeCategoryId;
+        })
+        .forEach(fav => {
+            const button = document.createElement('button');
+            button.className = 'favorite-button';
+            button.textContent = fav.name;
+            button.dataset.id = fav.id;
+            favoritesContainer.appendChild(button);
         });
-        return;
-    }
-
-    if (activeListId) {
-        db.collection('lists').doc(activeListId).collection('items').add({
-            name: itemName, quantity: itemQuantity, notes: itemNotes,
-            status: 'pending' // Set default status for new items
-        });
-    }
-    
-    if (saveFavoriteCheckbox.checked) {
-        const favoriteId = itemName.toLowerCase();
-        db.collection('favorites').doc(favoriteId).set({
-            name: itemName, quantity: itemQuantity, notes: itemNotes,
-        }, { merge: true });
-    }
-    resetAddItemForm();
 }
 
-/**
- * Populates and opens the favorites management modal.
- */
+
+/* =========================================================
+   6. FAVORITES MODAL
+   ========================================================= */
+
 function openFavoritesModal() {
     modalFavoritesList.innerHTML = '';
+
     favoritesCache.forEach(fav => {
+        let optionsHtml = `<option value="">-- Επιλογή --</option>`;
+
+        categoriesCache.forEach(cat => {
+            optionsHtml += `
+                <option value="${cat.id}"
+                    ${fav.categoryId === cat.id ? 'selected' : ''}>
+                    ${cat.name}
+                </option>`;
+        });
+
         const li = document.createElement('li');
         li.innerHTML = `
             <span class="item-content">${fav.name}</span>
-            <div class="modal-actions">
-                <button class="modal-edit-btn" data-id="${fav.id}">Επεξεργασία</button>
-                <button class="modal-delete-btn" data-id="${fav.id}">Διαγραφή</button>
+            <div class="item-actions">
+                <select class="modal-category-select"
+                        data-id="${fav.id}">
+                    ${optionsHtml}
+                </select>
+                <div class="modal-actions">
+                    <button class="modal-edit-btn" data-id="${fav.id}">
+                        Επεξεργασία
+                    </button>
+                    <button class="modal-delete-btn" data-id="${fav.id}">
+                        Διαγραφή
+                    </button>
+                </div>
             </div>
         `;
+
         modalFavoritesList.appendChild(li);
     });
+
     favoritesModalOverlay.style.display = 'block';
 }
 
-/**
- * Hides the favorites management modal.
- */
 function closeFavoritesModal() {
     favoritesModalOverlay.style.display = 'none';
+    if (editingFavoriteId) resetAddItemForm();
+}
+
+
+/* =========================================================
+   7. ITEM & FAVORITE CREATION
+   ========================================================= */
+
+function addItemOrUpdateFavorite() {
+    const name = itemNameInput.value.trim();
+    if (!name) return;
+
+    const quantity = itemQuantityInput.value.trim();
+    const notes    = itemNotesInput.value.trim();
+
+    /* Update existing favorite */
     if (editingFavoriteId) {
-        resetAddItemForm();
-    }
-}
-
-/**
- * Handles clicks within ALL active lists (To Buy, Look Later, Completed) using event delegation.
- * @param {Event} e The click event.
- */
-function handleListClick(e) {
-    const target = e.target;
-    if (!activeListId || !target.dataset.id) return;
-
-    const itemsRef = db.collection('lists').doc(activeListId).collection('items');
-    const id = target.dataset.id;
-
-    if (target.classList.contains('item-checkbox')) {
-        const newStatus = target.checked ? 'completed' : 'pending';
-        itemsRef.doc(id).update({ status: newStatus });
+        db.collection('favorites')
+          .doc(editingFavoriteId)
+          .set({ name, quantity, notes })
+          .then(resetAddItemForm);
+        return;
     }
 
-    if (target.classList.contains('delete-button')) {
-        if (confirm(`Είστε σίγουροι ότι θέλετε να διαγράψετε αυτό το προϊόν;`)) {
-            itemsRef.doc(id).delete();
-        }
+    /* Add item to list */
+    if (activeListId) {
+        db.collection('lists')
+          .doc(activeListId)
+          .collection('items')
+          .add({ name, quantity, notes, status: 'pending' });
     }
 
-    if (target.classList.contains('cant-find-button')) {
-        itemsRef.doc(id).update({ status: 'later' });
+    /* Save as favorite */
+    if (saveFavoriteCheckbox.checked) {
+        const favoriteId = name.toLowerCase();
+        db.collection('favorites')
+          .doc(favoriteId)
+          .set({ name, quantity, notes, categoryId: null }, { merge: true });
     }
+
+    resetAddItemForm();
 }
 
 
-// --- 5. EVENT LISTENERS SETUP ---
+/* =========================================================
+   8. EVENT HANDLERS
+   ========================================================= */
+
+/* Category tabs */
+favoritesCategoryTabs.addEventListener('click', e => {
+    if (!e.target.classList.contains('category-tab')) return;
+    activeCategoryId = e.target.dataset.id;
+    renderFavorites();
+});
+
+/* Shopping mode */
 shoppingModeToggle.addEventListener('change', () => {
     document.body.classList.toggle('shopping-mode', shoppingModeToggle.checked);
 });
 
+/* Add item */
 addButton.addEventListener('click', addItemOrUpdateFavorite);
-itemNameInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') addItemOrUpdateFavorite(); });
-
-shoppingListUl.addEventListener('click', handleListClick);
-completedListUl.addEventListener('click', handleListClick);
-lookLaterListUl.addEventListener('click', handleListClick); // Add listener to the new list
-
-completeListButton.addEventListener('click', async () => {
-    if (!activeListId || !confirm('Είστε σίγουροι ότι θέλετε να ολοκληρώσετε αυτή τη λίστα;')) return;
-    const currentListRef = db.collection('lists').doc(activeListId);
-    await currentListRef.update({ isActive: false, completedAt: firebase.firestore.FieldValue.serverTimestamp() });
-    if (unsubscribeFromItems) unsubscribeFromItems();
-    activeListId = null;
-    shoppingListUl.innerHTML = '';
-    completedListUl.innerHTML = '';
-    lookLaterListUl.innerHTML = ''; // Clear this list too
-    await createNewList();
+itemNameInput.addEventListener('keyup', e => {
+    if (e.key === 'Enter') addItemOrUpdateFavorite();
 });
 
-favoritesContainer.addEventListener('click', (e) => {
-    if (e.target.classList.contains('favorite-button')) {
-        const favoriteId = e.target.dataset.id;
-        const favoriteData = favoritesCache.find(fav => fav.id === favoriteId);
-        if (favoriteData) {
-            itemNameInput.value = favoriteData.name || '';
-            itemQuantityInput.value = favoriteData.quantity || '';
-            itemNotesInput.value = favoriteData.notes || '';
-            itemNameInput.focus();
-        }
-    }
-});
+/* Favorites modal */
 manageFavoritesButton.addEventListener('click', openFavoritesModal);
 closeModalButton.addEventListener('click', closeFavoritesModal);
-favoritesModalOverlay.addEventListener('click', (e) => { if (e.target === favoritesModalOverlay) closeFavoritesModal(); });
 
-modalFavoritesList.addEventListener('click', (e) => {
-    const target = e.target;
-    const favoriteId = target.dataset.id;
-    if (!favoriteId) return;
-
-    if (target.classList.contains('modal-edit-btn')) {
-        const favoriteData = favoritesCache.find(fav => fav.id === favoriteId);
-        if (favoriteData) {
-            itemNameInput.value = favoriteData.name || '';
-            itemQuantityInput.value = favoriteData.quantity || '';
-            itemNotesInput.value = favoriteData.notes || '';
-            editingFavoriteId = favoriteId;
-            addButtonText.textContent = 'Ενημέρωση Αγαπημένου';
-            saveFavoriteCheckbox.parentElement.style.display = 'none';
-            closeFavoritesModal();
-            itemNameInput.focus();
-        }
-    }
-
-    if (target.classList.contains('modal-delete-btn')) {
-        const favoriteData = favoritesCache.find(fav => fav.id === favoriteId);
-        if (confirm(`Είστε σίγουροι ότι θέλετε να διαγράψετε το "${favoriteData.name}" από τα αγαπημένα;`)) {
-            db.collection('favorites').doc(favoriteId).delete();
-        }
-    }
+favoritesModalOverlay.addEventListener('click', e => {
+    if (e.target === favoritesModalOverlay) closeFavoritesModal();
 });
 
-pastListsUl.addEventListener('click', async (e) => {
-    if (!e.target.classList.contains('past-list-header')) return;
-    const header = e.target;
-    const listId = header.dataset.id;
-    const itemsUl = header.nextElementSibling;
-    header.classList.toggle('open');
-    const isOpen = header.classList.contains('open');
-    if (isOpen && itemsUl.children.length === 0) {
-        itemsUl.innerHTML = '<li>Φόρτωση...</li>';
-        const itemsSnapshot = await db.collection('lists').doc(listId).collection('items').orderBy('name').get();
-        itemsUl.innerHTML = '';
-        itemsSnapshot.forEach(doc => {
-            const item = doc.data();
-            const itemLi = document.createElement('li');
-            itemLi.textContent = `${item.name}${item.quantity ? ` (${item.quantity})` : ''}${item.notes ? ` - ${item.notes}` : ''}`;
-            if (item.status === 'completed') { itemLi.classList.add('completed-item'); }
-            itemsUl.appendChild(itemLi);
-        });
-    }
-    itemsUl.style.display = isOpen ? 'block' : 'none';
-});
-
-loginButton.addEventListener('click', () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()));
+/* Login */
+loginButton.addEventListener('click', () =>
+    auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
+);
 
 
-// --- 6. MAIN AUTHENTICATION CONTROLLER ---
+/* =========================================================
+   9. AUTH CONTROLLER
+   ========================================================= */
+
 auth.onAuthStateChanged(user => {
-    if (user) {
-        const userDocRef = db.collection('allowedUsers').doc(user.uid);
-        userDocRef.get().then((doc) => {
-            if (doc.exists) {
-                // User is AUTHORIZED
-                document.body.classList.add('logged-in');
-                userNameSpan.textContent = user.displayName;
-                logoutButton.onclick = () => auth.signOut();
-                
-                db.collection('lists').where('isActive', '==', true).limit(1).get().then(snapshot => {
-                    snapshot.empty ? createNewList() : loadList(snapshot.docs[0]);
-                });
-
-                if (unsubscribeFromLists) unsubscribeFromLists();
-                unsubscribeFromLists = db.collection('lists').where('isActive', '==', false).orderBy('completedAt', 'desc').limit(10)
-                    .onSnapshot(snapshot => {
-                        pastListsUl.innerHTML = '';
-                        snapshot.forEach(doc => {
-                            const li = document.createElement('li');
-                            li.innerHTML = `<div class="past-list-header" data-id="${doc.id}">Λίστα της ${formatDate(doc.data().completedAt)}</div><ul class="past-list-items"></ul>`;
-                            pastListsUl.appendChild(li);
-                        });
-                    });
-
-                if (unsubscribeFromFavorites) unsubscribeFromFavorites();
-                unsubscribeFromFavorites = db.collection('favorites').orderBy('name').onSnapshot(snapshot => {
-                    favoritesContainer.innerHTML = '';
-                    favoritesCache = [];
-                    snapshot.forEach(doc => {
-                        favoritesCache.push({ id: doc.id, ...doc.data() });
-                        const button = document.createElement('button');
-                        button.className = 'favorite-button';
-                        button.textContent = doc.data().name;
-                        button.dataset.id = doc.id;
-                        favoritesContainer.appendChild(button);
-                    });
-                    if (favoritesModalOverlay.style.display === 'block') { openFavoritesModal(); }
-                });
-
-            } else {
-                // User is NOT AUTHORIZED
-                document.getElementById('login-section').style.display = 'none';
-                document.getElementById('unauthorized-section').style.display = 'block';
-                unauthorizedLogoutButton.onclick = () => auth.signOut();
-            }
-        });
-    } else {
-        // User is LOGGED OUT
+    if (!user) {
+        document.body.classList.remove('logged-in', 'shopping-mode');
         shoppingModeToggle.checked = false;
-        document.body.classList.remove('shopping-mode');
-        document.body.classList.remove('logged-in');
-        document.getElementById('login-section').style.display = 'block';
-        document.getElementById('unauthorized-section').style.display = 'none';
-        
+
         if (unsubscribeFromItems) unsubscribeFromItems();
         if (unsubscribeFromLists) unsubscribeFromLists();
         if (unsubscribeFromFavorites) unsubscribeFromFavorites();
+        if (unsubscribeFromCategories) unsubscribeFromCategories();
+
         activeListId = null;
+        return;
     }
+
+    const userDocRef = db.collection('allowedUsers').doc(user.uid);
+
+    userDocRef.get().then(doc => {
+        if (!doc.exists) {
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('unauthorized-section').style.display = 'block';
+            unauthorizedLogoutButton.onclick = () => auth.signOut();
+            return;
+        }
+
+        document.body.classList.add('logged-in');
+        userNameSpan.textContent = user.displayName;
+        logoutButton.onclick = () => auth.signOut();
+
+        db.collection('lists')
+          .where('isActive', '==', true)
+          .limit(1)
+          .get()
+          .then(snapshot =>
+              snapshot.empty ? createNewList() : loadList(snapshot.docs[0])
+          );
+
+        unsubscribeFromCategories = db.collection('categories')
+            .orderBy('name')
+            .onSnapshot(s => {
+                categoriesCache = s.docs.map(d => ({ id: d.id, ...d.data() }));
+                renderFavorites();
+            });
+
+        unsubscribeFromFavorites = db.collection('favorites')
+            .orderBy('name')
+            .onSnapshot(s => {
+                favoritesCache = s.docs.map(d => ({ id: d.id, ...d.data() }));
+                renderFavorites();
+                if (favoritesModalOverlay.style.display === 'block') {
+                    openFavoritesModal();
+                }
+            });
+    });
 });
 
 
-// --- 7. PWA SERVICE WORKER REGISTRATION ---
-// This is the new code that activates your PWA features.
+/* =========================================================
+   10. SERVICE WORKER
+   ========================================================= */
+
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-            .then(registration => {
-                console.log('ServiceWorker registration successful with scope: ', registration.scope);
-            })
-            .catch(error => {
-                console.log('ServiceWorker registration failed: ', error);
-            });
+        navigator.serviceWorker
+            .register('/sw.js')
+            .then(() => console.log('SW registered'))
+            .catch(err => console.log('SW failed:', err));
     });
 }

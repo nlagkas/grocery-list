@@ -1,110 +1,198 @@
 <!DOCTYPE html>
 <html lang="el">
 <head>
+    <!-- =====================================================
+         Meta & PWA Configuration
+    ====================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Λίστα για Ψώνια</title>
 
-    <!-- PWA Meta Tags -->
+    <!-- Progressive Web App -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#007bff">
-    
+
+    <!-- Styles -->
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-    <!-- Login/Unauthorized sections are unchanged -->
-    <div id="login-section">
+    <!-- =====================================================
+         Authentication States
+         (Visibility controlled via JavaScript)
+    ====================================================== -->
+
+    <!-- Login Screen -->
+    <div id="login-section" style="display: none;">
         <h1>Λίστα για Ψώνια</h1>
         <p>Παρακαλώ συνδεθείτε για να συνεχίσετε.</p>
         <button id="login-button">Σύνδεση με Google</button>
     </div>
+
+    <!-- Unauthorized Access Screen -->
     <div id="unauthorized-section" style="display: none;">
         <h1>Πρόσβαση Μη Εγκεκριμένη</h1>
         <p>Ο λογαριασμός σας δεν έχει πρόσβαση σε αυτήν την εφαρμογή.</p>
         <button id="unauthorized-logout-button">Αποσύνδεση</button>
     </div>
 
-    <!-- Main App Content -->
+    <!-- =====================================================
+         Main Application Content
+         (Visible only after successful authorization)
+    ====================================================== -->
     <div id="app-content">
+
+        <!-- ================= Header ================= -->
         <header>
             <h1 id="list-title">Η Λίστα μας</h1>
+
+            <!-- Logged-in User Info -->
             <div id="user-info">
                 <span id="user-name"></span>
                 <button id="logout-button">Αποσύνδεση</button>
             </div>
         </header>
 
-        <!-- NEW: Shopping Mode Toggle Switch -->
-        <div class="shopping-mode-toggle-container">
+        <!-- ================= Shopping Mode Toggle ================= -->
+        <div class="shopping-mode-toggle-container" style="display: none;">
             <label class="toggle-switch">
                 <input type="checkbox" id="shopping-mode-toggle">
                 <span class="slider"></span>
             </label>
             <label for="shopping-mode-toggle">Λειτουργία Αγορών</label>
         </div>
-        
+
+        <!-- ================= List Controls ================= -->
         <div class="controls-container">
-            <button id="complete-list-button">Ολοκλήρωση & Νέα Λίστα</button>
+            <button id="complete-list-button">
+                Ολοκλήρωση & Νέα Λίστα
+            </button>
         </div>
 
-        <div id="favorites-section">
+        <!-- =====================================================
+             Favorites Section
+        ====================================================== -->
+        <section id="favorites-section">
+
+            <!-- Section Header -->
             <div class="section-header">
                 <h2>Αγαπημένα</h2>
                 <button id="manage-favorites-button">Διαχείριση</button>
             </div>
-            <div id="favorites-container"></div>
-        </div>
 
-        <div id="add-item-form">
-            <input type="text" id="item-name-input" placeholder="Όνομα προϊόντος" required>
+            <!-- Category Tabs (generated dynamically) -->
+            <div id="favorites-category-tabs"></div>
+
+            <!-- Favorites Items Container -->
+            <div id="favorites-container"></div>
+        </section>
+
+        <!-- =====================================================
+             Add Item Form
+        ====================================================== -->
+        <div id="add-item-form" style="display: none;">
+
+            <!-- Item Name -->
+            <input
+                type="text"
+                id="item-name-input"
+                placeholder="Όνομα προϊόντος"
+                required
+            >
+
+            <!-- Optional Details -->
             <div class="details-inputs">
-                <input type="text" id="item-quantity-input" placeholder="Ποσότητα (π.χ. 1kg)">
-                <input type="text" id="item-notes-input" placeholder="Σημειώσεις (π.χ. χωρίς ζάχαρη)">
+                <input
+                    type="text"
+                    id="item-quantity-input"
+                    placeholder="Ποσότητα (π.χ. 1kg)"
+                >
+                <input
+                    type="text"
+                    id="item-notes-input"
+                    placeholder="Σημειώσεις (π.χ. χωρίς ζάχαρη)"
+                >
             </div>
+
+            <!-- Save as Favorite -->
             <div class="save-favorite-container">
                 <input type="checkbox" id="save-favorite-checkbox">
-                <label for="save-favorite-checkbox">Αποθήκευση στα αγαπημένα</label>
+                <label for="save-favorite-checkbox">
+                    Αποθήκευση στα αγαπημένα
+                </label>
             </div>
+
+            <!-- Submit -->
             <button id="add-button">
                 <span id="add-button-text">Προσθήκη στη Λίστα</span>
             </button>
         </div>
-    
+
+        <!-- =====================================================
+             Shopping Lists
+        ====================================================== -->
+
+        <!-- Active Shopping List -->
         <h2>Προς Αγορά</h2>
         <ul id="shopping-list-ul"></ul>
 
-        <!-- NEW: "Look for Later" List -->
+        <!-- Look Later -->
         <div id="look-later-section">
             <h2>Αναζήτηση Αργότερα</h2>
             <ul id="look-later-list-ul"></ul>
         </div>
-    
+
+        <!-- Completed Items -->
         <h2>Αγορασμένα</h2>
         <ul id="completed-list-ul"></ul>
 
+        <!-- Past Lists -->
         <hr>
         <h2>Παλαιότερες Λίστες</h2>
         <ul id="past-lists-ul"></ul>
+
     </div>
 
-    <!-- Favorites Management Modal (unchanged) -->
+    <!-- =====================================================
+         Favorites Management Modal
+         (Hidden by default)
+    ====================================================== -->
     <div id="favorites-modal-overlay" style="display: none;">
+
         <div id="favorites-modal">
+
+            <!-- Modal Header -->
             <div class="modal-header">
                 <h2>Διαχείριση Αγαπημένων</h2>
                 <button id="close-modal-button">&times;</button>
             </div>
+
+            <!-- Add New Category -->
+            <div class="modal-add-category">
+                <input
+                    type="text"
+                    id="new-category-input"
+                    placeholder="Όνομα νέας κατηγορίας..."
+                >
+                <button id="add-category-button">Δημιουργία</button>
+            </div>
+
+            <!-- Favorites List (managed via JS) -->
             <ul id="modal-favorites-list"></ul>
         </div>
     </div>
+
+    <!-- =====================================================
+         Scripts
+    ====================================================== -->
 
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-    
-    <!-- Your Script -->
+
+    <!-- Application Logic -->
     <script src="script.js"></script>
 
 </body>
