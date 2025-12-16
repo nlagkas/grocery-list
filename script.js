@@ -48,9 +48,9 @@ function loadList(listDoc) {
 
     if (unsubscribeFromItems) unsubscribeFromItems();
 
-    const itemsCollection = db.collection('lists').doc(activeListId).collection('items').orderBy('name');
+    const itemsRef = db.collection('lists').doc(activeListId).collection('items');
     
-    unsubscribeFromItems = itemsCollection.onSnapshot(snapshot => {
+    unsubscribeFromItems = itemsRef.orderBy('name').onSnapshot(snapshot => {
         shoppingListUl.innerHTML = '';
         completedListUl.innerHTML = '';
         snapshot.docs.forEach(doc => {
@@ -62,7 +62,8 @@ function loadList(listDoc) {
             item.completed ? completedListUl.appendChild(li) : shoppingListUl.appendChild(li);
 
             li.querySelector('input[type="checkbox"]').addEventListener('change', (e) => {
-                itemsCollection.doc(id).update({ completed: e.target.checked });
+                // *** THE FIX IS HERE: Use 'itemsRef' instead of 'itemsCollection' ***
+                itemsRef.doc(id).update({ completed: e.target.checked });
             });
         });
     });
@@ -99,24 +100,20 @@ const addItem = () => {
 addButton.addEventListener('click', addItem);
 itemInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') addItem(); });
 
-// **BUG FIX & IMPROVEMENT**: Explicitly create a new list after completing the old one.
 completeListButton.addEventListener('click', async () => {
     if (!activeListId || !confirm('Είστε σίγουροι ότι θέλετε να ολοκληρώσετε αυτή τη λίστα;')) return;
 
-    // 1. Mark the current list as inactive
     const currentListRef = db.collection('lists').doc(activeListId);
     await currentListRef.update({
         isActive: false,
         completedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     
-    // 2. Clear current list state
     if (unsubscribeFromItems) unsubscribeFromItems();
     activeListId = null;
     shoppingListUl.innerHTML = '';
     completedListUl.innerHTML = '';
 
-    // 3. Explicitly create the new list
     await createNewList();
 });
 
@@ -145,7 +142,6 @@ auth.onAuthStateChanged(user => {
                             const list = doc.data();
                             const listId = doc.id;
                             
-                            // Create the collapsible structure
                             const li = document.createElement('li');
                             li.innerHTML = `
                                 <div class="past-list-header" data-id="${listId}">
@@ -173,7 +169,6 @@ auth.onAuthStateChanged(user => {
     }
 });
 
-// **NEW**: Event listener for clicking on past list headers
 pastListsUl.addEventListener('click', async (e) => {
     if (!e.target.classList.contains('past-list-header')) return;
 
@@ -184,7 +179,7 @@ pastListsUl.addEventListener('click', async (e) => {
     header.classList.toggle('open');
     const isOpen = header.classList.contains('open');
 
-    if (isOpen && itemsUl.children.length === 0) { // Fetch items only on first open
+    if (isOpen && itemsUl.children.length === 0) {
         itemsUl.innerHTML = '<li>Φόρτωση...</li>';
         const itemsSnapshot = await db.collection('lists').doc(listId).collection('items').orderBy('name').get();
         itemsUl.innerHTML = '';
