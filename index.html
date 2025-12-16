@@ -33,12 +33,24 @@
             <button id="complete-list-button">Ολοκλήρωση & Νέα Λίστα</button>
         </div>
 
-        <!-- NEW: Replaced single input with a form -->
+        <!-- NEW: Favorites Section -->
+        <div id="favorites-section">
+            <h2>Αγαπημένα</h2>
+            <div id="favorites-container">
+                <!-- Favorite buttons will be added here by JavaScript -->
+            </div>
+        </div>
+
         <div id="add-item-form">
             <input type="text" id="item-name-input" placeholder="Όνομα προϊόντος" required>
             <div class="details-inputs">
                 <input type="text" id="item-quantity-input" placeholder="Ποσότητα (π.χ. 1kg)">
                 <input type="text" id="item-notes-input" placeholder="Σημειώσεις (π.χ. χωρίς ζάχαρη)">
+            </div>
+            <!-- NEW: Save as Favorite Checkbox -->
+            <div class="save-favorite-container">
+                <input type="checkbox" id="save-favorite-checkbox">
+                <label for="save-favorite-checkbox">Αποθήκευση στα αγαπημένα</label>
             </div>
             <button id="add-button">Προσθήκη στη Λίστα</button>
         </div>
