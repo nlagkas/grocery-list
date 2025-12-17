@@ -1,6 +1,6 @@
 // A unique name for our cache.
 // IMPORTANT: Increment this version number to force the update!
-const CACHE_NAME = 'grocery-list-cache-v4';
+const CACHE_NAME = 'grocery-list-cache-v5';
 
 // The list of files that make up the "app shell". Using relative paths for GitHub Pages compatibility.
 const urlsToCache = [
